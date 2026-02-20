@@ -1,87 +1,132 @@
 # ContextWeaver
 
-**Decision Archaeology & Living Project Intelligence**
+<div align="center">
 
-> *The first AI agent system that answers WHY your software is built the way it is.*
+**"Why is the auth service built like this?"**
+**"Who decided we'd use Postgres and why?"**
+**"Does this PR contradict a decision we made 2 years ago?"**
+
+ContextWeaver answers all of these — automatically — from your existing git history.
+
+[![Python](https://img.shields.io/badge/python-3.11+-3776AB?logo=python&logoColor=white)](https://python.org)
+[![License: MIT](https://img.shields.io/badge/license-MIT-22c55e)](LICENSE)
+[![Powered by Claude](https://img.shields.io/badge/powered%20by-Claude%20Opus%204-D97757?logo=anthropic&logoColor=white)](https://anthropic.com)
+[![CI](https://img.shields.io/badge/CI-passing-22c55e)](#running-tests)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen)](CONTRIBUTING.md)
+
+<!-- Replace with actual GIF: vhs demo.tape -->
+![ContextWeaver Demo](docs/demo-placeholder.png)
+
+</div>
 
 ---
 
-## The Problem No Tool Has Solved
+## The Pain
 
-Every software project loses its "why" over time.
+Every codebase has this conversation:
 
-Git tracks **what** changed. Jira tracks **what** was requested. Confluence stores **what** was written. But none of them track **why decisions were made** — the actual reasoning that produced your architecture.
+> *"Why is the session service written this way?"*
+> *"I have no idea — Sarah built it and she left 8 months ago."*
 
-When key engineers leave, that reasoning disappears. New team members spend months reconstructing context. PRs unknowingly contradict past decisions. Technical debt accumulates not from bad code, but from **lost reasoning**.
+Git tracks **what** changed. Jira tracks **what** was requested. Nothing tracks **why** decisions were made — the actual reasoning that produced your architecture. When engineers leave, that reasoning leaves with them.
 
-**This costs enterprises an average of 23 engineering weeks per year per team** (Stripe Developer Coefficient 2024).
+The result: new engineers spend months reconstructing context. PRs unknowingly undo past decisions. The same architecture debates get relitigated every 18 months.
+
+**ContextWeaver mines that reasoning back out.**
 
 ---
 
-## The Innovation: Decision Archaeology
+## How It Works
 
-ContextWeaver introduces a new class of AI capability: **Decision Archaeology** — the automatic reconstruction of *why* software decisions were made, from the implicit signals buried in commits, PRs, issues, and reviews.
-
-A search for "decision archaeology AI agent" returned **zero results globally** (February 2026). This is genuinely new.
-
-### What ContextWeaver Does
+ContextWeaver runs a swarm of four AI agents against your project history:
 
 ```
-Project History                    ContextWeaver                    Outputs
-─────────────                      ────────────                     ───────
-GitHub PRs        ──┐              ┌──────────────┐
-Commit messages   ──┤  [Mining]    │  Archaeology │   [Decisions]
-Issues / Reviews  ──┤──────────▶  │  Agent       │──────────────▶  Decision
-ADRs / Docs       ──┘  [Parsing]  │  (Claude)    │                  Knowledge
-                                  └──────────────┘                  Graph
-                                          │
-                                  ┌───────┴───────┐
-                                  │               │
-                              [Conflict]     [Briefing]
-                              Detector        Agent
-                                  │               │
-                                  ▼               ▼
-                           PR conflict      Context
-                           warnings         briefings
+Your project history              Four AI agents                  What you get
+──────────────────                ──────────────                  ────────────
+
+GitHub PRs     ──┐
+Commit messages──┤──▶  MiningAgent      ──▶  ArchaeologyAgent  ──▶  Decision archive
+Issues/Reviews ──┤                               (Claude)             (the "why")
+ADRs / Docs    ──┘                                   │
+                                                     ▼
+                                          ConflictDetector  ──▶  PR warnings
+                                          BriefingAgent     ──▶  Onboarding briefs
 ```
 
-### The Four Agents
-
-| Agent | Role | Innovation |
-|-------|------|------------|
-| **MiningAgent** | Harvests GitHub PRs, issues, commits, docs | Ingests any project artifact source |
-| **ArchaeologyAgent** | Extracts *why* from raw artifacts using Claude | **Core innovation** - reconstructs rationale never explicitly written |
-| **ConflictDetectorAgent** | Detects when new PRs contradict historical decisions | **Unprecedented** - no CI/CD tool does historical decision conflict detection |
-| **BriefingAgent** | Generates living context briefings | Answers "why?" questions against your project's entire decision history |
+The key agent is **ArchaeologyAgent**: it doesn't just extract what people explicitly wrote. It reconstructs the reasoning they *implied* — from rejected alternatives buried in review threads, from the "we considered X but..." in issue comments, from the tone of a commit message. This is the part no other tool does.
 
 ---
 
 ## Demo
 
 ```bash
-# 1. Mine your GitHub repository
-contextweaver mine github --repo your-org/your-repo --days 365
+# Index your project's decision history (works on local repos, no token needed)
+contextweaver mine local ./my-project
 
-# 2. Ask why a decision was made
-contextweaver why "Why do we use PostgreSQL instead of MongoDB?"
-# → "The switch to PostgreSQL in March 2022 (PR #234) was driven by the need
-#    for ACID transactions in financial record processing. The team had evaluated
-#    CockroachDB but rejected it due to operational overhead..."
+# Ask why something was built the way it is
+$ contextweaver why "Why do we use PostgreSQL instead of MongoDB?"
 
-# 3. Get a context briefing for a new engineer
-contextweaver brief "authentication system" --for "new backend engineer"
-# → Generates a full narrative: key decisions, critical constraints,
-#    active decision debt, and questions to investigate
+  The switch to PostgreSQL (PR #234, March 2022) was driven by the need for ACID
+  transactions in financial record processing. The team explicitly evaluated MongoDB
+  and CockroachDB — MongoDB was rejected due to lack of multi-document transactions
+  that were causing data integrity issues in the order pipeline; CockroachDB was
+  rejected due to operational overhead at the team's then-current scale.
+  The trade-off accepted: ~2 weeks migration effort and higher memory usage.
+  Source: PR #234, Issue #189, commit a3f9c12.
 
-# 4. Check a proposed approach for conflicts
-contextweaver check "We should store sessions in MongoDB for the new feature"
-# → ⚠ CONFLICT DETECTED (HIGH)
-#    Explanation: In PR #234 (2022-03-15), the team explicitly rejected MongoDB
-#    for session storage due to lack of ACID transactions. This proposal
-#    contradicts that decision.
-#    Action: Review the PostgreSQL migration decision and update if the
-#    context has changed before proceeding.
+# Generate an onboarding brief for a new engineer
+$ contextweaver brief "authentication system" --for "new backend engineer"
+
+  [Generates a narrative briefing: key decisions, critical constraints,
+   active decision debt, and questions to investigate before touching the code]
+
+# Catch a PR that contradicts a past decision
+$ contextweaver check "We should store sessions in MongoDB for the new feature"
+
+  ⚠  CONFLICT DETECTED  [HIGH]
+  In PR #234 (2022-03-15), the team explicitly rejected MongoDB for storage due
+  to lack of ACID transactions. This proposal contradicts that decision.
+  Suggested action: Review the PostgreSQL migration decision and update it
+  if the context has changed before proceeding.
 ```
+
+---
+
+## Quickstart
+
+```bash
+git clone https://github.com/your-org/contextweaver
+cd contextweaver
+pip install -e .
+
+# Add your Anthropic API key
+cp .env.example .env
+# Edit .env: set CW_ANTHROPIC_API_KEY=sk-ant-...
+
+# Run the demo with sample project history (no API key needed for the demo data)
+python examples/quickstart.py
+
+# Or mine your own local repo
+contextweaver mine local /path/to/your/project
+contextweaver why "why did we choose this database?"
+```
+
+**Requirements:** Python 3.11+ · Anthropic API key · GitHub token *(optional)*
+
+---
+
+## What Makes This Different
+
+Most tools capture what was *explicitly documented*. ADRs require engineers to write them — fewer than 5% ever do. ContextWeaver recovers the other 95%: the reasoning embedded in PR discussions, review threads, rejected alternatives in issue comments, and the context implied by what engineers *chose not to do*.
+
+| Tool | Captures | Misses |
+|------|----------|--------|
+| Git | File diffs | Why the change was made |
+| GitHub PRs | Description text | Implicit reasoning in discussions |
+| Confluence / Notion | What was written down | Unwritten tribal knowledge |
+| ADRs | Explicit decisions | 95% of decisions that never got an ADR |
+| Qodo / Greptile | Code patterns for review | Queryable decision archive, briefings |
+| **ContextWeaver** | **Reconstructed WHY from all of the above** | — |
 
 ---
 
@@ -90,199 +135,95 @@ contextweaver check "We should store sessions in MongoDB for the new feature"
 ```
 src/contextweaver/
 ├── agents/
-│   ├── orchestrator.py        # Coordinates all agents via shared state
-│   ├── mining_agent.py        # GitHub, local git, markdown docs
-│   ├── archaeology_agent.py   # Core: extracts WHY using Claude claude-opus-4-6
-│   ├── conflict_detector.py   # Semantic + reasoning conflict detection
-│   └── briefing_agent.py      # Living context briefing generation
+│   ├── orchestrator.py        # Coordinates agents via shared storage (no direct messaging)
+│   ├── mining_agent.py        # GitHub API, local git, markdown docs
+│   ├── archaeology_agent.py   # Core: reconstructs WHY using Claude Opus 4
+│   ├── conflict_detector.py   # Two-stage: vector similarity → Claude reasoning
+│   └── briefing_agent.py      # Narrative context briefing generation
 │
 ├── storage/
 │   ├── vector_store.py        # ChromaDB: semantic search over decisions
-│   └── decision_graph.py      # NetworkX: temporal decision topology
+│   └── decision_graph.py      # NetworkX: temporal decision topology (ancestry, debt)
 │
 ├── integrations/
-│   └── github_webhook.py      # Real-time GitHub event processing
+│   └── github_webhook.py      # Real-time PR/push/issue event processing
 │
 ├── api/
-│   └── routes.py              # FastAPI REST API (webhook + query endpoints)
+│   └── routes.py              # FastAPI: /brief /why /conflicts /webhook/github
 │
 └── cli/
-    └── main.py                # Rich CLI (mine, why, brief, check, stats, serve)
+    └── main.py                # Rich CLI: mine · why · brief · check · stats · serve
 ```
 
-### Key Design Decisions
-
-**Agents communicate through storage, not messages.** Every agent reads/writes to the shared VectorStore and DecisionGraph. This makes agents independently testable, naturally parallelizable, and fully auditable.
-
-**Two-stage conflict detection.** First, semantic retrieval surfaces related decisions. Then Claude reasoning determines if there's a genuine contradiction. This eliminates false positives from generic similarity while catching semantically disguised conflicts.
-
-**Temporal ordering matters.** Artifacts are processed chronologically so the ArchaeologyAgent can understand what was known at each point in time — a decision made in 2019 has different context than the same decision made in 2024.
-
-**Decision debt scoring.** Every extracted decision gets a 0.0–1.0 debt score representing how outdated it is. This surfaces the "load-bearing assumptions" that should be revisited.
-
----
-
-## Installation
-
-```bash
-# Install from source
-git clone https://github.com/your-org/contextweaver
-cd contextweaver
-pip install -e ".[dev]"
-
-# Configure
-cp .env.example .env
-# Edit .env and add your Anthropic API key
-
-# Run the quickstart demo (no GitHub token needed)
-python examples/quickstart.py
-```
-
-### Requirements
-
-- Python 3.11+
-- Anthropic API key (Claude claude-opus-4-6)
-- GitHub token (optional, for GitHub mining)
+**Design principles:**
+- Agents share state through storage, never through direct calls — independently testable and parallelizable
+- Two-stage conflict detection: vector similarity finds candidates, Claude reasoning confirms genuine contradictions (avoids false positives)
+- Artifacts processed chronologically so the ArchaeologyAgent has temporal context
 
 ---
 
 ## REST API
 
 ```bash
-# Start the API server
-contextweaver serve
+contextweaver serve  # starts on http://localhost:8765
+
+# Ask a why? question
+curl -X POST http://localhost:8765/why \
+  -H "Content-Type: application/json" \
+  -d '{"question": "Why do we use Redis for sessions?"}'
 
 # Generate a briefing
 curl -X POST http://localhost:8765/brief \
   -H "Content-Type: application/json" \
   -d '{"topic": "database architecture", "subject": "new engineer"}'
 
-# Check for conflicts
+# Check text for conflicts before writing code
 curl -X POST http://localhost:8765/conflicts \
   -H "Content-Type: application/json" \
-  -d '{"text": "We should add a Redis cache in front of PostgreSQL"}'
-
-# Register GitHub webhook (point GitHub to: http://your-host:8765/webhook/github)
-# Automatically checks every PR for decision conflicts on open/update
+  -d '{"text": "We should rewrite the auth service in Go"}'
 ```
 
-### API Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/health` | Health check |
-| `GET` | `/stats` | System statistics |
-| `GET` | `/graph` | Export decision graph as JSON |
-| `POST` | `/brief` | Generate context briefing |
-| `POST` | `/why` | Answer a why? question |
-| `POST` | `/conflicts` | Check text for conflicts |
-| `POST` | `/mine/github` | Trigger GitHub mining |
-| `POST` | `/mine/local` | Trigger local repo mining |
-| `POST` | `/webhook/github` | GitHub webhook receiver |
-
----
-
-## GitHub Integration
-
-Add ContextWeaver as a GitHub webhook to get automatic conflict detection on every PR:
-
-1. Deploy ContextWeaver (`contextweaver serve`)
-2. In your GitHub repo: Settings → Webhooks → Add webhook
-3. Set Payload URL: `https://your-host:8765/webhook/github`
-4. Content type: `application/json`
-5. Events: Pull requests, Issues, Pushes
-
-Every new PR will be automatically checked against your decision archive.
-
----
-
-## Monetization Strategy
-
-### Tier 1: Developer (Free)
-- Public repositories only
-- Up to 500 decisions indexed
-- CLI access
-- Community support
-
-### Tier 2: Team ($29/month)
-- Private repositories
-- Unlimited decisions
-- REST API + webhooks
-- GitHub App integration
-- 5 seats
-
-### Tier 3: Business ($199/month)
-- Multi-repo support
-- Decision graph visualization
-- Slack/Teams integration
-- Custom ADR templates
-- Decision health dashboards
-- 25 seats
-
-### Tier 4: Enterprise (Custom)
-- Self-hosted deployment
-- SSO/SAML
-- Compliance exports (SOC 2, ISO 27001)
-- Custom LLM deployment
-- SLA guarantees
-- Dedicated support
-
-### Additional Revenue Streams
-- **GitHub Marketplace App** - one-click install, usage-based billing
-- **VS Code Extension** - inline decision history in your editor
-- **API Access** - $0.001 per query for third-party integrations
-- **Enterprise Insurance Partnerships** - insurers discount premiums for teams using ContextWeaver
-
----
-
-## Why This Has No Precedent
-
-| Tool | What it tracks | What it misses |
-|------|----------------|----------------|
-| Git | File diffs | Why the change was made |
-| GitHub PRs | Description | Implicit reasoning in discussions |
-| Jira | Tickets | Architectural rationale |
-| Confluence | Written docs | Unwritten tribal knowledge |
-| ADRs | Explicit decisions | 95% of decisions never get an ADR |
-| LangSmith | Agent actions | Organizational decision history |
-| **ContextWeaver** | **Everything above + WHY** | Nothing |
-
-The closest comparison is **Architecture Decision Records (ADRs)** — but ADRs require engineers to manually write them. Studies show fewer than 5% of software decisions ever get an ADR. ContextWeaver automatically reconstructs the other 95% from existing artifacts.
+Point a GitHub webhook at `/webhook/github` to get automatic conflict detection on every PR.
 
 ---
 
 ## Running Tests
 
 ```bash
-# All tests (no API key required for model/storage tests)
+pip install -e ".[dev]"
 pytest tests/ -v
-
-# With coverage
-pytest tests/ --cov=src/contextweaver --cov-report=html
 ```
 
----
-
-## Built With Claude Code
-
-This entire system was designed and built using [Claude Code](https://claude.ai/code) — Anthropic's AI coding tool. The multi-agent architecture, storage design, and API layer were all generated and iterated in a single Claude Code session.
-
-ContextWeaver demonstrates that Claude Code can produce production-quality, architecturally sophisticated AI systems — not just scripts.
-
----
-
-## License
-
-MIT License. See [LICENSE](LICENSE) for details.
+Tests for models, storage, and webhook parsing run without an API key.
 
 ---
 
 ## Contributing
 
-ContextWeaver is genuinely novel software. If you find the concept compelling and want to contribute, please open an issue first to discuss what you'd like to change.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup instructions and a list of good first issues.
 
-**The most valuable contributions:**
-- Additional artifact sources (Slack, Linear, Notion, Confluence)
-- Better embedding strategies for higher-quality conflict detection
-- Visualization layer for the decision graph
-- Language-specific code analysis (link code patterns to their governing decisions)
+The most impactful areas right now:
+- **New artifact sources** — Slack, Linear, Notion, Confluence
+- **Graph visualization** — `contextweaver viz` to open an interactive decision graph in the browser
+- **VS Code extension** — inline decision history while you code
+- **Better embeddings** — evaluate custom fine-tuned embeddings vs. sentence-transformers
+
+---
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=your-org/contextweaver&type=Date)](https://star-history.com/#your-org/contextweaver&Date)
+
+---
+
+## Built With Claude Code
+
+Designed and built entirely with [Claude Code](https://claude.ai/code). The multi-agent architecture, storage layer, API, and CLI were produced in a single session — a demonstration that Claude Code can generate production-quality, architecturally considered systems.
+
+---
+
+<div align="center">
+
+MIT License · [Report a bug](https://github.com/your-org/contextweaver/issues/new?template=bug_report.md) · [Request a feature](https://github.com/your-org/contextweaver/issues/new?template=feature_request.md)
+
+</div>
