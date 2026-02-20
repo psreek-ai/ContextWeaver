@@ -14,7 +14,7 @@ Set Padding 20
 
 # Setup
 Hide
-Type "export CW_ANTHROPIC_API_KEY=sk-ant-demo && cd /tmp && git clone https://github.com/your-org/contextweaver demo-run && cd demo-run && pip install -e . -q"
+Type "export CW_ANTHROPIC_API_KEY=sk-ant-demo && cd /tmp && git clone https://github.com/psreek-ai/ContextWeaver demo-run && cd demo-run && pip install -e . -q"
 Enter
 Sleep 3s
 Show

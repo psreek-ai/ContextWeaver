@@ -14,8 +14,8 @@ ContextWeaver answers all of these — automatically — from your existing git 
 [![CI](https://img.shields.io/badge/CI-passing-22c55e)](#running-tests)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen)](CONTRIBUTING.md)
 
-<!-- Replace with actual GIF: vhs demo.tape -->
-![ContextWeaver Demo](docs/demo-placeholder.png)
+<!-- To regenerate: pip install agg && agg docs/demo.cast docs/demo.gif -->
+![ContextWeaver Demo](docs/demo.gif)
 
 </div>
 
@@ -95,7 +95,7 @@ $ contextweaver check "We should store sessions in MongoDB for the new feature"
 ## Quickstart
 
 ```bash
-git clone https://github.com/your-org/contextweaver
+git clone https://github.com/psreek-ai/ContextWeaver
 cd contextweaver
 pip install -e .
 
@@ -212,7 +212,7 @@ The most impactful areas right now:
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=your-org/contextweaver&type=Date)](https://star-history.com/#your-org/contextweaver&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=psreek-ai/ContextWeaver&type=Date)](https://star-history.com/#psreek-ai/ContextWeaver&Date)
 
 ---
 
@@ -224,6 +224,6 @@ Designed and built entirely with [Claude Code](https://claude.ai/code). The mult
 
 <div align="center">
 
-MIT License · [Report a bug](https://github.com/your-org/contextweaver/issues/new?template=bug_report.md) · [Request a feature](https://github.com/your-org/contextweaver/issues/new?template=feature_request.md)
+MIT License · [Report a bug](https://github.com/psreek-ai/ContextWeaver/issues/new?template=bug_report.md) · [Request a feature](https://github.com/psreek-ai/ContextWeaver/issues/new?template=feature_request.md)
 
 </div>

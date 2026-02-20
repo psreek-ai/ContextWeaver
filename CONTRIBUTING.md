@@ -5,7 +5,7 @@ Thanks for your interest. ContextWeaver is early-stage and contributions have an
 ## Setup
 
 ```bash
-git clone https://github.com/your-org/contextweaver
+git clone https://github.com/psreek-ai/ContextWeaver
 cd contextweaver
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
@@ -80,4 +80,4 @@ Use the [bug report template](.github/ISSUE_TEMPLATE/bug_report.md). Include:
 
 ## Questions
 
-Open a [GitHub Discussion](https://github.com/your-org/contextweaver/discussions) for questions, ideas, or general chat.
+Open a [GitHub Discussion](https://github.com/psreek-ai/ContextWeaver/discussions) for questions, ideas, or general chat.
