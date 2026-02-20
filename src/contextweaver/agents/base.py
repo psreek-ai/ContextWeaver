@@ -30,7 +30,11 @@ class BaseAgent(ABC):
     NAME: str = "unnamed_agent"
 
     def __init__(self) -> None:
-        self._client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
+        key = settings.anthropic_api_key
+        if key.startswith("sk-ant-si"):
+            self._client = anthropic.Anthropic(auth_token=key)
+        else:
+            self._client = anthropic.Anthropic(api_key=key)
         self._model = settings.claude_model
         self._total_input_tokens = 0
         self._total_output_tokens = 0
