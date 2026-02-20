@@ -78,5 +78,4 @@ class TestDecisionGraph:
         graph.add_decision(_make_decision("x", "X"))
         data = graph.to_dict()
         assert "nodes" in data
-        # NetworkX <3 uses "links"; NetworkX >=3 uses "edges"
-        assert "links" in data or "edges" in data
+        assert "links" in data
