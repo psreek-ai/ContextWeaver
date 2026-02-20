@@ -107,12 +107,16 @@ class Orchestrator:
         self,
         repo_path: str,
         docs_dir: str | None = None,
+        since: str | None = None,
+        until: str | None = None,
     ) -> list[Decision]:
         """
         Mine a local git repository (and optional docs dir) and index decisions.
         Works without any GitHub token.
         """
-        artifacts: list[RawArtifact] = self._miner.mine_local_git(repo_path)
+        artifacts: list[RawArtifact] = self._miner.mine_local_git(
+            repo_path, since=since, until=until
+        )
         if docs_dir:
             artifacts.extend(self._miner.mine_docs(docs_dir))
         artifacts.sort(key=lambda a: a.created_at)

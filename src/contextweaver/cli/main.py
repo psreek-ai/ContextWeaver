@@ -123,13 +123,15 @@ def mine_github(
 def mine_local(
     path: Annotated[str, typer.Argument(help="Path to local git repository")],
     docs: Annotated[Optional[str], typer.Option("--docs", help="Docs directory")] = None,
+    since: Annotated[Optional[str], typer.Option("--since", help="Start date (YYYY-MM-DD or ISO format)")] = None,
+    until: Annotated[Optional[str], typer.Option("--until", help="End date (YYYY-MM-DD or ISO format)")] = None,
 ) -> None:
     """Mine a local git repository for decisions."""
     console.print(Panel(f"[bold cyan]ContextWeaver[/] - Mining local repo: {path}"))
     orc = _get_orchestrator()
 
     with console.status("[bold green]Mining artifacts and running Decision Archaeology...[/]"):
-        decisions = orc.mine_local(path, docs_dir=docs)
+        decisions = orc.mine_local(path, docs_dir=docs, since=since, until=until)
 
     console.print(f"[green]Mining complete.[/] Extracted [bold]{len(decisions)}[/] decisions.")
     if decisions:

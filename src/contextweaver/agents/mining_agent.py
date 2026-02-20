@@ -142,10 +142,22 @@ class MiningAgent(BaseAgent):
         )
         return artifacts, status
 
-    def mine_local_git(self, repo_path: str, max_commits: int = 500) -> list[RawArtifact]:
+    def mine_local_git(
+        self,
+        repo_path: str,
+        max_commits: int = 500,
+        since: str | None = None,
+        until: str | None = None,
+    ) -> list[RawArtifact]:
         """
         Extract commit messages from a local git repository.
         Works without a GitHub token - great for private/air-gapped repos.
+
+        Args:
+            repo_path: Path to the git repository
+            max_commits: Maximum number of commits to process
+            since: Start date (YYYY-MM-DD or ISO format)
+            until: End date (YYYY-MM-DD or ISO format)
         """
         try:
             import git  # type: ignore
@@ -155,8 +167,30 @@ class MiningAgent(BaseAgent):
             self.log.error("mining.git_error", path=repo_path, error=str(exc))
             return []
 
+        # Parse date filters if provided
+        since_dt = None
+        until_dt = None
+        if since:
+            try:
+                since_dt = datetime.fromisoformat(since).replace(tzinfo=timezone.utc)
+            except ValueError:
+                self.log.warning("mining.invalid_since_date", since=since)
+        if until:
+            try:
+                until_dt = datetime.fromisoformat(until).replace(tzinfo=timezone.utc)
+            except ValueError:
+                self.log.warning("mining.invalid_until_date", until=until)
+
         artifacts = []
         for commit in list(repo.iter_commits())[:max_commits]:
+            commit_dt = datetime.fromtimestamp(commit.committed_date, tz=timezone.utc)
+
+            # Filter by date range if specified
+            if since_dt and commit_dt < since_dt:
+                continue
+            if until_dt and commit_dt > until_dt:
+                continue
+
             artifacts.append(
                 RawArtifact(
                     kind=ArtifactKind.COMMIT,
@@ -165,9 +199,7 @@ class MiningAgent(BaseAgent):
                     title=commit.summary,
                     body=commit.message,
                     author=commit.author.email,
-                    created_at=datetime.fromtimestamp(
-                        commit.committed_date, tz=timezone.utc
-                    ),
+                    created_at=commit_dt,
                     metadata={"files_changed": list(commit.stats.files.keys())[:20]},
                 )
             )
